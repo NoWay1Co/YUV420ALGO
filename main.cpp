@@ -4,10 +4,44 @@
 #include <thread>
 #include <mutex>
 
-#define WIDTH 1920
-#define HEIGHT 1080
+#include <string>
+#include <map>
+#include <sstream>
 
 using namespace std;
+
+// Parameters that can be configured without recompilation
+string INPUT_YUV_FILE = "input.yuv";
+string OUTPUT_YUV_FILE = "output.yuv";
+string BMP_FILE = "input.bmp";
+uint32_t WIDTH = 1920;
+uint32_t HEIGHT = 1080;
+
+// Function to read configuration file
+void readConfig(const string& configFile) {
+    ifstream file(configFile);
+    if (!file) {
+        cerr << "Error opening config file: " << configFile << endl;
+        exit(1);
+    }
+
+    string line;
+    map<string, string> config;
+
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string key, value;
+        if (getline(ss, key, '=') && getline(ss, value)) {
+            config[key] = value;
+        }
+    }
+
+    if (config.find("input_yuv") != config.end()) INPUT_YUV_FILE = config["input_yuv"];
+    if (config.find("output_yuv") != config.end()) OUTPUT_YUV_FILE = config["output_yuv"];
+    if (config.find("bmp_file") != config.end()) BMP_FILE = config["bmp_file"];
+    if (config.find("width") != config.end()) WIDTH = stoi(config["width"]);
+    if (config.find("height") != config.end()) HEIGHT = stoi(config["height"]);
+}
 
 // Structure to represent an RGB pixel
 struct RGB {
@@ -89,9 +123,12 @@ void overlayBMP(vector<YUV>& yuvFrame, const vector<YUV>& bmpYUV, uint32_t frame
 }
 
 int main() {
+    // Read configuration
+    readConfig("config.txt");
+
     // Open YUV file
-    ifstream yuvFile("input.yuv", ios::binary);
-    ofstream outputYuvFile("output.yuv", ios::binary);
+    ifstream yuvFile(INPUT_YUV_FILE, ios::binary);
+    ofstream outputYuvFile(OUTPUT_YUV_FILE, ios::binary);
 
     if (!yuvFile || !outputYuvFile) {
         cerr << "Error opening YUV files." << endl;
@@ -101,7 +138,7 @@ int main() {
     // Read BMP file
     vector<RGB> bmpData;
     uint32_t bmpWidth, bmpHeight;
-    readBMP("input.bmp", bmpData, bmpWidth, bmpHeight);
+    readBMP(BMP_FILE, bmpData, bmpWidth, bmpHeight);
 
     // Convert BMP to YUV
     vector<YUV> bmpYUV;

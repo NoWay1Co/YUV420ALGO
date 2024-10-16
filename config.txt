@@ -1,0 +1,5 @@
+input_yuv=input.yuv
+output_yuv=output.yuv
+bmp_file=input.bmp
+width=1920
+height=1080
