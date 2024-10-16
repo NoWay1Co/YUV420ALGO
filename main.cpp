@@ -79,6 +79,9 @@ public:
         uint8_t header[54];
         file.read(reinterpret_cast<char*>(header), 54);
 
+        uint32_t pixelArrayOffset = header[10] | (header[11] << 8) | (header[12] << 16) | (header[13] << 24);
+        file.seekg(pixelArrayOffset, ios::beg);
+
         // Check the BMP magic number to validate the file
         if (header[0] != 'B' || header[1] != 'M') {
             cerr << "Invalid BMP file: " << filename << endl;
@@ -96,7 +99,16 @@ public:
 
         data.reserve(width * height);
         data.resize(width * height);
-        file.read(reinterpret_cast<char*>(data.data()), width * height * 3);
+
+        uint32_t rowSize = (3 * width + 3) & ~3; // Align to 4 bytes (stride)
+        vector<uint8_t> rowData(rowSize);
+
+        for (int32_t i = height - 1; i >= 0; --i) {
+            file.read(reinterpret_cast<char*>(rowData.data()), rowSize);
+            for (uint32_t j = 0; j < width; ++j) {
+                data[i * width + j] = { rowData[j * 3 + 2], rowData[j * 3 + 1], rowData[j * 3] };
+            }
+        }
 
         file.close();
     }
