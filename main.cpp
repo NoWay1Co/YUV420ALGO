@@ -6,6 +6,7 @@
 #include <string>
 #include <map>
 #include <sstream>
+#include <chrono>
 
 using namespace std;
 
@@ -66,6 +67,7 @@ private:
 
 class BMPReader {
 public:
+
     void readBMP(const string& filename, vector<RGB>& data, uint32_t& width, uint32_t& height) {
         ifstream file(filename, ios::binary);
         if (!file) {
@@ -75,6 +77,12 @@ public:
 
         uint8_t header[54];
         file.read(reinterpret_cast<char*>(header), 54);
+
+        // Check the BMP magic number to validate the file
+        if (header[0] != 'B' || header[1] != 'M') {
+            cerr << "Invalid BMP file: " << filename << endl;
+            exit(1);
+        }
 
         width = header[18] |
             (header[19] << 8) |
@@ -201,7 +209,8 @@ public:
                 }
             }
         }
-                
+
+        cout << "Program finished successfully." << endl;
     }
 
 private:
@@ -209,8 +218,7 @@ private:
 };
 
 int main() {
-        
-    //Checking how many Hardwar threads is avaliable
+    // Checking how many hardware threads are available
     unsigned int numThreads = thread::hardware_concurrency();
     if (numThreads == 0) {
         cout << "Unable to determine the number of hardware threads." << endl;
@@ -222,11 +230,9 @@ int main() {
     // Time tracking
     auto start = chrono::high_resolution_clock::now();
 
-
     Config config("config.txt");
     YUVProcessor processor(config);
     processor.process();
-
 
     auto end = chrono::high_resolution_clock::now();
     chrono::duration<double> duration = end - start;
