@@ -67,7 +67,6 @@ private:
 
 class BMPReader {
 public:
-
     void readBMP(const string& filename, vector<RGB>& data, uint32_t& width, uint32_t& height) {
         ifstream file(filename, ios::binary);
         if (!file) {
@@ -93,6 +92,7 @@ public:
             (header[24] << 16) |
             (header[25] << 24);
 
+        data.reserve(width * height);
         data.resize(width * height);
         for (int32_t i = height - 1; i >= 0; --i) {
             for (uint32_t j = 0; j < width; ++j) {
