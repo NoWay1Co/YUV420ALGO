@@ -33,3 +33,4 @@
 build/ALL_BUILD.vcxproj.filters
 /build
 /out
+/.vs
