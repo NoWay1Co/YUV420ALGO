@@ -96,14 +96,7 @@ public:
 
         data.reserve(width * height);
         data.resize(width * height);
-        for (int32_t i = height - 1; i >= 0; --i) {
-            for (uint32_t j = 0; j < width; ++j) {
-                uint8_t b = file.get();
-                uint8_t g = file.get();
-                uint8_t r = file.get();
-                data[i * width + j] = { r, g, b };
-            }
-        }
+        file.read(reinterpret_cast<char*>(data.data()), width * height * 3);
 
         file.close();
     }
@@ -197,21 +190,9 @@ public:
 
             yuvOverlay.overlayBMP(frame, bmpYUV, config.getWidth(), config.getHeight(), bmpWidth, bmpHeight);
 
-            for (uint32_t y = 0; y < config.getHeight(); ++y) {
-                for (uint32_t x = 0; x < config.getWidth(); ++x) {
-                    outputYuvFile.put(frame[y * config.getWidth() + x].y);
-                }
-            }
-            for (uint32_t y = 0; y < config.getHeight(); y += 2) {
-                for (uint32_t x = 0; x < config.getWidth(); x += 2) {
-                    outputYuvFile.put(frame[y * config.getWidth() + x].u);
-                }
-            }
-            for (uint32_t y = 0; y < config.getHeight(); y += 2) {
-                for (uint32_t x = 0; x < config.getWidth(); x += 2) {
-                    outputYuvFile.put(frame[y * config.getWidth() + x].v);
-                }
-            }
+            outputYuvFile.write(reinterpret_cast<const char*>(yPlane.data()), yPlane.size());
+            outputYuvFile.write(reinterpret_cast<const char*>(uPlane.data()), uPlane.size());
+            outputYuvFile.write(reinterpret_cast<const char*>(vPlane.data()), vPlane.size());
         }
 
         yuvFile.close();
