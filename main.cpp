@@ -62,6 +62,8 @@ private:
         if (config.find("bmp_file") != config.end()) bmpFile = config["bmp_file"];
         if (config.find("width") != config.end()) width = stoi(config["width"]);
         if (config.find("height") != config.end()) height = stoi(config["height"]);
+
+        file.close();
     }
 };
 
@@ -102,6 +104,8 @@ public:
                 data[i * width + j] = { r, g, b };
             }
         }
+
+        file.close();
     }
 };
 
@@ -210,6 +214,9 @@ public:
             }
         }
 
+        yuvFile.close();
+        outputYuvFile.close();
+
         cout << "Program finished successfully." << endl;
     }
 
@@ -237,7 +244,6 @@ int main() {
     auto end = chrono::high_resolution_clock::now();
     chrono::duration<double> duration = end - start;
     cout << "Computing Time: " << duration.count() << " seconds" << endl;
-    cout << "Program finished successfully." << endl;
 
     cin.get();
     return 0;
