@@ -9,29 +9,20 @@
 
 using namespace std;
 
+// Structure to represent an RGB pixel
+struct RGB {
+    uint8_t r, g, b;
+};
+
+// Structure to represent a YUV pixel
+struct YUV {
+    uint8_t y, u, v;
+};
+
 class Config {
 public:
     Config(const string& configFile) {
-        ifstream file(configFile);
-        if (!file) {
-            cerr << "Error opening config file: " << configFile << endl;
-            exit(1);
-        }
-
-        string line;
-        while (getline(file, line)) {
-            stringstream ss(line);
-            string key, value;
-            if (getline(ss, key, '=') && getline(ss, value)) {
-                config[key] = value;
-            }
-        }
-
-        inputYuvFile = config.count("input_yuv") ? config["input_yuv"] : "input.yuv";
-        outputYuvFile = config.count("output_yuv") ? config["output_yuv"] : "output.yuv";
-        bmpFile = config.count("bmp_file") ? config["bmp_file"] : "input.bmp";
-        width = config.count("width") ? stoi(config["width"]) : 1920;
-        height = config.count("height") ? stoi(config["height"]) : 1080;
+        readConfig(configFile);
     }
 
     string getInputYuvFile() const { return inputYuvFile; }
@@ -41,12 +32,36 @@ public:
     uint32_t getHeight() const { return height; }
 
 private:
-    map<string, string> config;
-    string inputYuvFile;
-    string outputYuvFile;
-    string bmpFile;
-    uint32_t width;
-    uint32_t height;
+    string inputYuvFile = "input.yuv";
+    string outputYuvFile = "output.yuv";
+    string bmpFile = "input.bmp";
+    uint32_t width = 1920;
+    uint32_t height = 1080;
+
+    void readConfig(const string& configFile) {
+        ifstream file(configFile);
+        if (!file) {
+            cerr << "Error opening config file: " << configFile << endl;
+            exit(1);
+        }
+
+        string line;
+        map<string, string> config;
+
+        while (getline(file, line)) {
+            stringstream ss(line);
+            string key, value;
+            if (getline(ss, key, '=') && getline(ss, value)) {
+                config[key] = value;
+            }
+        }
+
+        if (config.find("input_yuv") != config.end()) inputYuvFile = config["input_yuv"];
+        if (config.find("output_yuv") != config.end()) outputYuvFile = config["output_yuv"];
+        if (config.find("bmp_file") != config.end()) bmpFile = config["bmp_file"];
+        if (config.find("width") != config.end()) width = stoi(config["width"]);
+        if (config.find("height") != config.end()) height = stoi(config["height"]);
+    }
 };
 
 class BMPReader {
@@ -61,8 +76,14 @@ public:
         uint8_t header[54];
         file.read(reinterpret_cast<char*>(header), 54);
 
-        width = *reinterpret_cast<uint32_t*>(&header[18]);
-        height = *reinterpret_cast<uint32_t*>(&header[22]);
+        width = header[18] |
+            (header[19] << 8) |
+            (header[20] << 16) |
+            (header[21] << 24);
+        height = header[22] |
+            (header[23] << 8) |
+            (header[24] << 16) |
+            (header[25] << 24);
 
         data.resize(width * height);
         for (int32_t i = height - 1; i >= 0; --i) {
@@ -180,8 +201,7 @@ public:
                 }
             }
         }
-
-        cout << "Program finished successfully." << endl;
+                
     }
 
 private:
@@ -189,8 +209,30 @@ private:
 };
 
 int main() {
+        
+    //Checking how many Hardwar threads is avaliable
+    unsigned int numThreads = thread::hardware_concurrency();
+    if (numThreads == 0) {
+        cout << "Unable to determine the number of hardware threads." << endl;
+    }
+    else {
+        cout << "Number of hardware threads available: " << numThreads << endl;
+    }
+
+    // Time tracking
+    auto start = chrono::high_resolution_clock::now();
+
+
     Config config("config.txt");
     YUVProcessor processor(config);
     processor.process();
+
+
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> duration = end - start;
+    cout << "Computing Time: " << duration.count() << " seconds" << endl;
+    cout << "Program finished successfully." << endl;
+
+    cin.get();
     return 0;
 }
