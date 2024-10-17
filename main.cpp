@@ -20,6 +20,10 @@ struct YUV {
     uint8_t y, u, v;
 };
 
+struct YUVPtr {
+    uint8_t *y, *u, *v;
+};
+
 class Config {
 public:
     Config(const string& configFile) {
@@ -148,12 +152,14 @@ public:
 
 class YUVOverlay {
 public:
-    void overlayBMP(vector<YUV>& yuvFrame, const vector<YUV>& bmpYUV, uint32_t frameWidth, uint32_t frameHeight, uint32_t bmpWidth, uint32_t bmpHeight) {
+    void overlayBMP(vector<YUVPtr>& yuvFrame, const vector<YUV>& bmpYUV, uint32_t frameWidth, uint32_t frameHeight, uint32_t bmpWidth, uint32_t bmpHeight) {
         for (uint32_t y = 0; y < bmpHeight; ++y) {
             for (uint32_t x = 0; x < bmpWidth; ++x) {
                 uint32_t frameIndex = y * frameWidth + x;
                 uint32_t bmpIndex = y * bmpWidth + x;
-                yuvFrame[frameIndex] = bmpYUV[bmpIndex];
+                *yuvFrame[frameIndex].y = bmpYUV[bmpIndex].y;
+                *yuvFrame[frameIndex].u = bmpYUV[bmpIndex].u;
+                *yuvFrame[frameIndex].v = bmpYUV[bmpIndex].v;
             }
         }
     }
@@ -190,13 +196,13 @@ public:
             yuvFile.read(reinterpret_cast<char*>(uPlane.data()), uPlane.size());
             yuvFile.read(reinterpret_cast<char*>(vPlane.data()), vPlane.size());
 
-            vector<YUV> frame(config.getWidth() * config.getHeight());
+            vector<YUVPtr> frame(config.getWidth() * config.getHeight());
             for (uint32_t y = 0; y < config.getHeight(); ++y) {
                 for (uint32_t x = 0; x < config.getWidth(); ++x) {
                     uint32_t index = y * config.getWidth() + x;
-                    frame[index].y = yPlane[index];
-                    frame[index].u = uPlane[(y / 2) * (config.getWidth() / 2) + (x / 2)];
-                    frame[index].v = vPlane[(y / 2) * (config.getWidth() / 2) + (x / 2)];
+                    frame[index].y = &yPlane[index];
+                    frame[index].u = &uPlane[(y / 2) * (config.getWidth() / 2) + (x / 2)];
+                    frame[index].v = &vPlane[(y / 2) * (config.getWidth() / 2) + (x / 2)];
                 }
             }
 
